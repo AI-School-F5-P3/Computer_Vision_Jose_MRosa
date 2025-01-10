@@ -1,0 +1,2 @@
+# Computer_Vision_Jose_MRosa
+Reconocimiento facial
