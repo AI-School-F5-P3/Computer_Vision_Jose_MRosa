@@ -1,0 +1,16 @@
+// Variables
+:root {
+    --white-color: #f9f6f6;
+    --transparent-bg: rgba(0, 0, 0, 0.35);
+    --primary-bg: rgba(33, 39, 80, 0.8);
+    --primary-bg-95: rgba(33, 39, 80, .96);
+    --primary-color: #19d7ba;
+    --secondary-color: rgba(255, 255, 255, 0.3);
+    --terthiary-color: rgba(255, 255, 255, 0.6);
+    --angle: 60deg;
+    --gradient-bg: linear-gradient(var(--angle), rgb(30, 75, 2) 0%, rgba(33, 6, 88, 1) 33%, rgb(16, 21, 82) 68%, rgb(150, 5, 97) 100%);
+    --gradient-bg2: linear-gradient(#0000009e, #52006c52) padding-box, linear-gradient(rgba(78, 42, 5, .49) 0%, rgba(53, 0, 62, .37) 33%, #2f056900 60%) border-box;
+    --font-awesome: 'Font Awesome 5 Free';
+    --hover-transition: all 0.3s linear;
+    --border-radius: 10px;
+}
