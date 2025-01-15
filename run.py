@@ -16,11 +16,13 @@ def main():
     print(f"\n🖥️ {BLUE} Iniciando servidor con Uvicorn...{RESET}\n")
     frontend_process = subprocess.Popen(
         [sys.executable, "-m", "uvicorn", "frontend.app:app", "--reload"],
+        # [sys.executable, "-m", "uvicorn", "src.main:app", "--reload"],
         cwd="."
     )
     
     # Abrir el navegador
     webbrowser.open("http://127.0.0.1:8000")
+    # webbrowser.open("file:///C:/Users/maria/MROSA/BOOTCAMP%20IA/Proyectos/Proyecto_18_Reconocimiento-facial/Computer_Vision_Jose_MRosa/app/home.html")
 
     # Configuración de rutas para SCSS
     SCSS_DIRECTORY = "frontend/static/scss"

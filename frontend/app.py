@@ -4,13 +4,16 @@ from reactpy import component, html, use_state
 from reactpy.backend.fastapi import configure
 from fastapi.staticfiles import StaticFiles
 
+from api.face_detection_api import FaceDetectionAPI
+
 # ✅ Importación de componentes personalizados
 from frontend.event_access import EventAccess
 from frontend.user_list import UserList
 from frontend.add_user import AddUser
 
-# Crear la aplicación FastAPI
-app = FastAPI()
+# Crear la aplicación FastAPI con la clase FaceDetectionAPI
+api_instance = FaceDetectionAPI()
+app = api_instance.app
 
 # Configurar CORS para permitir solicitudes desde cualquier origen
 app.add_middleware(
