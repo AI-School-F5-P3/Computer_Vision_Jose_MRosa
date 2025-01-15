@@ -10,19 +10,15 @@ from frontend.scss_watcher import watch_scss
 os.environ["PYTHONPATH"] = str(Path(".").resolve())
 
 def main():
-    main_path = Path("frontend")
-      
     # Iniciar servidor con Uvicorn usando subprocess
     print(f"\n🖥️ {BLUE} Iniciando servidor con Uvicorn...{RESET}\n")
     frontend_process = subprocess.Popen(
         [sys.executable, "-m", "uvicorn", "frontend.app:app", "--reload"],
-        # [sys.executable, "-m", "uvicorn", "src.main:app", "--reload"],
         cwd="."
     )
     
-    # Abrir el navegador
-    webbrowser.open("http://127.0.0.1:8000")
-    # webbrowser.open("file:///C:/Users/maria/MROSA/BOOTCAMP%20IA/Proyectos/Proyecto_18_Reconocimiento-facial/Computer_Vision_Jose_MRosa/app/home.html")
+    # Abrir el navegador local con el archivo home.html
+    webbrowser.open(Path("frontend/static/html/home.html").resolve().as_uri())
 
     # Configuración de rutas para SCSS
     SCSS_DIRECTORY = "frontend/static/scss"
