@@ -174,7 +174,7 @@ class FaceProcessor:
             self.processing = False
 
 class FaceRecognitionSystem:
-    def __init__(self, dataset_path="app/dataset"):
+    def __init__(self, dataset_path="dataset"):
         self.dataset_path = Path(dataset_path)
         self.dataset_path.mkdir(exist_ok=True)
         self.known_face_encodings = []

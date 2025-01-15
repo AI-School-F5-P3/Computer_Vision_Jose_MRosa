@@ -1,0 +1,22 @@
+@keyframes appear {
+    0% {
+        // background-position: 0% -100%;
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+        // background-position: 0% 0%;
+    }
+}
+
+@keyframes gradient {
+    0% {
+    background-position: 100% 100%;
+    }
+    50% {
+    background-position: 0% 0%;
+    }
+    100% {
+    background-position: 0% 0%;
+    }
+}
