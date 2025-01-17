@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Recognition System</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="home.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen p-4">
+    <div class="container mx-auto">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Video Feed Section -->
+            <div class="md:col-span-2 bg-white p-4 rounded-lg shadow">
+                <h2 class="text-xl font-bold mb-4">Welcome to the F5 Party !</h2>
+                <div class="video-container">
+                    <video id="video" autoplay playsinline></video>
+                    <canvas id="overlay"></canvas>
+                </div>
+                <button id="toggleCamera" class="btn btn-primary mt-4">
+                    Start Camera
+                </button>
+            </div>
+
+            <!-- Users Section -->
+            <div class="bg-white p-4 rounded-lg shadow">
+                <h2 class="text-xl font-bold mb-4">Registered Users</h2>
+                <div id="userList" class="user-list"></div>
+                <button id="addUserBtn" class="btn btn-primary w-full mt-4">
+                    Add New User
+                </button>
+            </div>
+        </div>
+    </div>
+
+   
+
+    <!-- Add User Dialog -->
+    <div id="addUserDialog" class="dialog-overlay">
+        <div class="dialog">
+            <h2 class="text-xl font-bold mb-4">Add New User</h2>
+            <p class="text-gray-600 mb-4">Enter username and capture face images</p>
+            
+            <input type="text" id="username" placeholder="Username" class="input">
+            
+            <div id="capturedImages" class="captured-images"></div>
+            
+            <div class="flex justify-end gap-2 mt-4">
+                <button id="captureBtn" class="btn btn-primary" disabled>
+                    Capture Image
+                </button>
+                <button id="saveUserBtn" class="btn btn-primary" disabled>
+                    Save User
+                </button>
+                <button id="cancelBtn" class="btn bg-gray-200">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="home.js"></script>
+</body>
+</html>
