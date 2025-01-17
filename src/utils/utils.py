@@ -1,4 +1,3 @@
-from dotenv import load_dotenv
 from pathlib import Path
 import os
 
@@ -42,39 +41,3 @@ WORLD = "\U0001F30D"         # 🌍
 CELEBRATION = "\U0001F389"   # 🎉
 THINKING = "\U0001F914"      # 🤔
 RAISED_HAND = "\U0000270B"   # ✋
-
-def get_env_key(env_key, levels_up=2, env_file_name=".env"):
-    """
-    Obtiene una clave específica de un archivo .env ubicado en un nivel superior.
-
-    Parameters:
-    - env_key (str): El nombre de la clave que se quiere recuperar.
-    - levels_up (int): Cuántos niveles hacia arriba buscar el archivo .env (por defecto, 2).
-    - env_file_name (str): El nombre del archivo .env (por defecto, ".env").
-
-    Returns:
-    - str: El valor de la clave solicitada.
-    """
-    try:
-        # Resolver la ruta al archivo .env
-        dotenv_path = Path(__file__).resolve().parents[levels_up] / env_file_name
-        if not dotenv_path.exists():
-            message = f"{RED}{CROSS_MARK} Error: FileNotFoundError: No se encontró el archivo .env en {dotenv_path}{RESET}"
-            print(message)
-            raise FileNotFoundError(message)
-
-        # Cargar las variables del archivo .env
-        load_dotenv(dotenv_path=dotenv_path)
-
-        # Obtener la clave API
-        key = os.environ.get(env_key)
-        if key is None:
-            message = f"{RED}{CROSS_MARK} Error: ValueError: La clave '{env_key}' no está configurada en el archivo .env.{RESET}"
-            print(message)
-            raise ValueError(message)
-
-        return key
-
-    except (FileNotFoundError, ValueError):
-        # El mensaje ya se imprime dentro de los bloques anteriores
-        raise
