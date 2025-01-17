@@ -16,7 +16,8 @@ from PIL import Image
 from vision_pipeline import VisionPipeline
 
 
-
+import os
+from datetime import datetime
 
 app = FastAPI()
 
@@ -183,8 +184,7 @@ class FaceProcessor:
         finally:
             self.processing = False
 
-import os
-from datetime import datetime
+
 # DEFINE EL DIRECTORIO BASE PARA LOS LOGS
 LOG_DIR = "logs"
 os.makedirs(LOG_DIR, exist_ok=True)
