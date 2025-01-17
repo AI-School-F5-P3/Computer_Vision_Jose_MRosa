@@ -1,5 +1,4 @@
 from typing import Dict, Optional, Any
-import yaml
 import time
 import cv2
 import numpy as np
@@ -55,19 +54,15 @@ class MaskResult:
 
 class BaseVisionModel:
     def __init__(self):
-        self._enabled = True
         self.executor = ThreadPoolExecutor(max_workers=1)
         self._last_result: Optional[Any] = None
         self._cache_duration = 5.0  # Default cache duration in seconds
+        self.last_process_time = 0
+        self.process_interval = 1.0  # Process every 1 second
 
-    def is_enabled(self) -> bool:
-        return self._enabled
-
-    def enable(self):
-        self._enabled = True
-
-    def disable(self):
-        self._enabled = False
+    def should_process_frame(self) -> bool:
+        current_time = time.time()
+        return (current_time - self.last_process_time) >= self.process_interval
 
     def get_cached_result(self) -> Optional[Any]:
         if self._last_result is None:
@@ -84,21 +79,13 @@ class EmotionDetector(BaseVisionModel):
     def __init__(self):
         super().__init__()
         print("Initializing Emotion Detector...")
-        
         self.classifier = pipeline(
             "image-classification",
             model="dima806/facial_emotions_image_detection",
             top_k=7
         )
-        
-        self.last_process_time = 0
-        self.process_interval = 1.0  # Process every 1 second
         self._cache_duration = 1.5  # Cache results for 1.5 seconds
         print("Emotion Detector initialized")
-    
-    def should_process_frame(self) -> bool:
-        current_time = time.time()
-        return (current_time - self.last_process_time) >= self.process_interval
     
     async def process(self, frame) -> Optional[EmotionResult]:
         cached_result = self.get_cached_result()
@@ -138,25 +125,18 @@ class EmotionDetector(BaseVisionModel):
             print(f"Error in emotion detection: {e}")
             return None
 
+
+
 class MaskDetector(BaseVisionModel):
     def __init__(self):
         super().__init__()
         print("Initializing Mask Detector...")
-        
         self.classifier = pipeline(
             "image-classification",
-            model="mrm8488/mask-detection",
-            top_k=2
+            model="Hemg/Face-Mask-Detection"
         )
-        
-        self.last_process_time = 0
-        self.process_interval = 1.0  # Process every 1 second
         self._cache_duration = 1.5  # Cache results for 1.5 seconds
         print("Mask Detector initialized")
-    
-    def should_process_frame(self) -> bool:
-        current_time = time.time()
-        return (current_time - self.last_process_time) >= self.process_interval
     
     async def process(self, frame) -> Optional[MaskResult]:
         cached_result = self.get_cached_result()
@@ -179,13 +159,20 @@ class MaskDetector(BaseVisionModel):
         try:
             start_time = time.time()
             
+            # Convert BGR to RGB and resize to 224x224 (common input size for ViT models)
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            pil_image = Image.fromarray(rgb_frame)
-            predictions = self.classifier(pil_image)
+            resized_frame = cv2.resize(rgb_frame, (224, 224))
             
-            # Model returns 'with_mask' and 'without_mask' predictions
-            wearing_mask = any(pred['label'] == 'with_mask' and pred['score'] > 0.5 for pred in predictions)
-            confidence = max(pred['score'] for pred in predictions)
+            # Convert to PIL Image
+            pil_image = Image.fromarray(resized_frame)
+            
+            # Get prediction
+            prediction = self.classifier(pil_image)[0]
+            print(prediction)
+            
+            # Check the label and confidence
+            wearing_mask = prediction['label'] == "with_mask"
+            confidence = prediction['score']
             
             processing_time = time.time() - start_time
             
@@ -200,29 +187,53 @@ class MaskDetector(BaseVisionModel):
             return None
 
 class VisionPipeline:
-    def __init__(self, config_path: str = "pipeline_config.yml"):
-        self.models: Dict[str, BaseVisionModel] = {}
-        self.load_config(config_path)
+    def __init__(self):
+        self.models = {
+            'emotion': EmotionDetector(),
+            'mask': MaskDetector()
+        }
+        self.current_analysis_type = None
     
-    def load_config(self, config_path: str):
-        try:
-            with open(config_path, 'r') as f:
-                self.config = yaml.safe_load(f)
-        except FileNotFoundError:
-            print("Config file not found, using default configuration")
-            self.config = {'models': {'emotion': {'enabled': True}, 'mask': {'enabled': True}}}
-        
-        # Initialize enabled models
-        if self.config['models'].get('emotion', {}).get('enabled', False):
-            self.models['emotion'] = EmotionDetector()
-        if self.config['models'].get('mask', {}).get('enabled', False):
-            self.models['mask'] = MaskDetector()
-    
-    async def process_frame(self, frame) -> Dict[str, Dict[str, Any]]:
+    async def process_frame(self, frame, analysis_type: str = None) -> Dict[str, Dict[str, Any]]:
         results = {}
-        for model_name, model in self.models.items():
-            if model.is_enabled():
-                result = await model.process(frame)
-                if result:
-                    results[model_name] = result.to_dict()
+        
+        # Update analysis type if provided
+        if analysis_type is not None:
+            self.set_analysis_type(analysis_type)
+        
+        # If analysis type is "none" or not set, return empty results
+        if not self.current_analysis_type or self.current_analysis_type == "none":
+            return results
+        
+        # Process with the current model if it exists
+        if self.current_analysis_type in self.models:
+            model = self.models[self.current_analysis_type]
+            result = await model.process(frame)
+            if result:
+                results[self.current_analysis_type] = result.to_dict()
+        
         return results
+
+    def set_analysis_type(self, analysis_type: str):
+        """
+        Set the current analysis type for the pipeline.
+        If 'none' is provided, clears the current analysis type.
+        """
+        # Convert to lowercase for case-insensitive comparison
+        analysis_type = analysis_type.lower() if analysis_type else 'none'
+        
+        # Clear analysis type if 'none' is selected
+        if analysis_type == 'none':
+            if self.current_analysis_type is not None:
+                print("Disabling vision pipeline processing")
+                self.current_analysis_type = None
+            return True
+            
+        # Set new analysis type if valid
+        if analysis_type in self.models:
+            if analysis_type != self.current_analysis_type:
+                print(f"Switching analysis type to: {analysis_type}")
+                self.current_analysis_type = analysis_type
+                return True
+                
+        return False

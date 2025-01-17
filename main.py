@@ -1,4 +1,4 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File, HTTPException
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 import cv2
 import face_recognition
@@ -14,7 +14,6 @@ from fastapi.websockets import WebSocketState
 from collections import deque
 from PIL import Image
 from vision_pipeline import VisionPipeline
-
 
 
 
@@ -297,14 +296,17 @@ async def video_websocket(websocket: WebSocket):
                 await manager.add_frame(websocket, frame)
                 
                 try:
+                    # Get current analysis type from app state
+                    analysis_type = getattr(websocket.app.state, 'analysis_type', None)
+                    
                     # Process face recognition
                     face_results = await asyncio.wait_for(
                         face_system.process_frame(frame),
                         timeout=5.0
                     )
                     
-                    # Process vision pipeline
-                    vision_results = await vision_pipeline.process_frame(frame)
+                    # Process vision pipeline with current analysis type
+                    vision_results = await vision_pipeline.process_frame(frame, analysis_type) if analysis_type else {}
                     
                     # Combine results
                     response = {
@@ -338,6 +340,7 @@ async def video_websocket(websocket: WebSocket):
     finally:
         await manager.disconnect(websocket)
 
+
 @app.post("/users")
 async def add_user(username: str, images: List[UploadFile] = File(...)):
     return await face_system.add_user(username, images)
@@ -347,6 +350,27 @@ async def get_users():
     users = [dir.name for dir in face_system.dataset_path.iterdir() if dir.is_dir()]
     return {"users": users}
 
+
+@app.post("/set-analysis")
+async def set_analysis(request: Request, data: dict):
+    analysis_type = data.get("type", "none")
+    
+    # Store the analysis type in app.state
+    request.app.state.analysis_type = analysis_type
+    print(f'Analysis type set to {analysis_type}')
+    
+    return {
+        "status": "success", 
+        "type": analysis_type,
+        "message": f"Analysis type set to: {analysis_type}"
+    }
+
+
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000, workers=1)
+
+
+

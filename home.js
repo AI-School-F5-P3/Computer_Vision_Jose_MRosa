@@ -8,7 +8,7 @@ const FRAME_INTERVAL = 200; // Increased to 200ms for better stability
 let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 5;
 let lastReceivedResults = [];
-let lastEmotionState = null;
+let lastVisionState = null;
 let animationFrameId = null;
 let reconnectTimeout = null;
 
@@ -135,7 +135,7 @@ function stopStream() {
     isStreaming = false;
     toggleBtn.textContent = 'Start Camera';
     captureBtn.disabled = true;
-    lastEmotionState = null;
+    lastVisionState = null;
     
     const ctx = overlay.getContext('2d');
     ctx.clearRect(0, 0, overlay.width, overlay.height);
@@ -182,16 +182,18 @@ function sendFrame() {
 function handleWsMessage(event) {
     try {
         const data = JSON.parse(event.data);
-        if (data.vision_results?.emotion) {
-            lastEmotionState = data.vision_results.emotion;
+        
+        // Update vision state based on received results
+        if (data.vision_results) {
+            lastVisionState = data.vision_results;
+        } else {
+            lastVisionState = null;
         }
         
         if (data.face_results) {
             const results = {
                 face_results: data.face_results,
-                vision_results: {
-                    emotion: lastEmotionState
-                }
+                vision_results: lastVisionState
             };
             lastReceivedResults = results;
             drawResults(results);
@@ -259,31 +261,60 @@ function drawResults(results) {
             Math.max(16, scaledTop - namePadding)
         );
 
-        // Combine status and emotion in one label if emotion is available
-        let statusText = result.status;
-        if (lastEmotionState && index === 0) {
-            statusText += ` | ${lastEmotionState.emotion} (${(lastEmotionState.confidence * 100).toFixed(1)}%)`;
+        // Generate vision analysis text based on available results
+        let visionText = '';
+        if (vision_results) {
+            if (vision_results.emotion) {
+                visionText = `Emotion: ${vision_results.emotion.emotion} (${(vision_results.emotion.confidence * 100).toFixed(1)}%)`;
+            } else if (vision_results.mask) {
+                const maskStatus = vision_results.mask.wearing_mask ? 'Wearing Mask' : 'No Mask';
+                visionText = `Mask: ${maskStatus} (${(vision_results.mask.confidence * 100).toFixed(1)}%)`;
+            } else if (vision_results.people) {
+                visionText = `People Count: ${vision_results.people.count}`;
+            }
         }
 
-        const statusMetrics = offscreenCtx.measureText(statusText);
-        const statusHeight = 24;
-        const statusPadding = 8;
+        if (visionText) {
+            const statusMetrics = offscreenCtx.measureText(visionText);
+            const statusHeight = 24;
+            const statusPadding = 8;
 
-        // Background for status
+            // Background for vision analysis
+            offscreenCtx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            offscreenCtx.fillRect(
+                scaledLeft,
+                scaledTop + scaledHeight + namePadding,
+                statusMetrics.width + (statusPadding * 2),
+                statusHeight
+            );
+
+            // Draw vision analysis text
+            offscreenCtx.fillStyle = 'white';
+            offscreenCtx.fillText(
+                visionText,
+                scaledLeft + statusPadding,
+                scaledTop + scaledHeight + statusHeight
+            );
+        }
+
+        // Draw authorization status
+        const authStatusText = result.status;
+        const authStatusMetrics = offscreenCtx.measureText(authStatusText);
+        const authStatusPadding = 8;
+
         offscreenCtx.fillStyle = 'rgba(0, 0, 0, 0.8)';
         offscreenCtx.fillRect(
             scaledLeft,
-            scaledTop + scaledHeight + namePadding,
-            statusMetrics.width + (statusPadding * 2),
-            statusHeight
+            scaledTop + scaledHeight + (visionText ? 32 : 0) + namePadding,
+            authStatusMetrics.width + (authStatusPadding * 2),
+            24
         );
 
-        // Draw status text
         offscreenCtx.fillStyle = color;
         offscreenCtx.fillText(
-            statusText,
-            scaledLeft + statusPadding,
-            scaledTop + scaledHeight + statusHeight
+            authStatusText,
+            scaledLeft + authStatusPadding,
+            scaledTop + scaledHeight + (visionText ? 32 : 0) + 20
         );
     });
 
@@ -418,6 +449,33 @@ usernameInput.oninput = () => {
     }
 };
 
+// Analysis Type Controls
+const analysisSelect = document.getElementById('analysisType');
+
+analysisSelect.onchange = async () => {
+    const selectedOption = analysisSelect.value;
+    
+    try {
+        const response = await fetch('http://localhost:8000/set-analysis', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ type: selectedOption })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('Analysis type updated:', data);
+    } catch (error) {
+        console.error('Error updating analysis type:', error);
+        alert('Error updating analysis type. Please try again.');
+    }
+};
+
 // Cleanup
 window.addEventListener('beforeunload', () => {
     stopStream();
@@ -425,3 +483,4 @@ window.addEventListener('beforeunload', () => {
 
 // Initial setup
 document.addEventListener('DOMContentLoaded', fetchUsers);
+
