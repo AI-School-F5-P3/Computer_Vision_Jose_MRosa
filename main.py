@@ -198,6 +198,7 @@ class FaceRecognitionSystem:
         self.face_processor = FaceProcessor()
         self.executor = ThreadPoolExecutor(max_workers=2)
         self.encoding_lock = threading.Lock()
+        self.detected_users = set()  # TRACK USERS WHOSE IMAGES ARE ALREADY LOGGED
         self.load_known_faces()
 
     def load_known_faces(self):
@@ -263,11 +264,11 @@ class FaceRecognitionSystem:
             self.known_face_names
         )
 
-        # NUEVA LÓGICA: GUARDA LAS IMÁGENES DE LAS CARAS RECONOCIDAS
+        # NUEVA LÓGICA: SOLO GUARDAR IMÁGENES LA PRIMERA VEZ QUE SE DETECTA A UN USUARIO AUTORIZADO
         for result in results:
-            if result['status'] == "AUTHORIZED":
+            if result['status'] == "AUTHORIZED" and result['name'] not in self.detected_users:
                 self.save_recognition_log(frame, result['name'], result['location'])
-
+                self.detected_users.add(result['name'])
         return results
     
 face_system = FaceRecognitionSystem()
