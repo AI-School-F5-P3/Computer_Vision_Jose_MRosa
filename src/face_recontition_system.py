@@ -137,3 +137,4 @@ class FaceRecognitionSystem:
                 import shutil
                 shutil.rmtree(temp_path)
             raise e
+

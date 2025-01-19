@@ -8,6 +8,7 @@ const FRAME_INTERVAL = 200; // Increased to 200ms for better stability
 let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 5;
 let lastReceivedResults = [];
+let lastVisionState = null;
 let animationFrameId = null;
 let reconnectTimeout = null;
 
@@ -81,20 +82,18 @@ async function startStream() {
                 width: { ideal: 640 },
                 height: { ideal: 480 },
                 facingMode: 'user',
-                frameRate: { ideal: 15 } // Limit frame rate for better performance
+                frameRate: { ideal: 15 }
             }
         });
         
         video.srcObject = stream;
         
-        // Wait for video to be ready
         await new Promise((resolve) => {
             video.onloadedmetadata = () => resolve();
         });
         
         await video.play();
         
-        // Set canvas size to match video
         const videoTrack = stream.getVideoTracks()[0];
         const settings = videoTrack.getSettings();
         
@@ -136,13 +135,13 @@ function stopStream() {
     isStreaming = false;
     toggleBtn.textContent = 'Start Camera';
     captureBtn.disabled = true;
+    lastVisionState = null;
     
     const ctx = overlay.getContext('2d');
     ctx.clearRect(0, 0, overlay.width, overlay.height);
     lastReceivedResults = [];
 }
 
-// Improved frame sending with rate limiting and error handling
 function sendFrame() {
     if (!isStreaming || !ws || ws.readyState !== WebSocket.OPEN) {
         animationFrameId = requestAnimationFrame(sendFrame);
@@ -166,11 +165,10 @@ function sendFrame() {
             return;
         }
         
-        // Optimize drawing
         ctx.drawImage(video, 0, 0);
-        const base64Frame = canvas.toDataURL('image/jpeg', 0.6); // Reduced quality for better performance
+        const base64Frame = canvas.toDataURL('image/jpeg', 0.6);
         
-        if (ws.bufferedAmount === 0) { // Only send if previous frame was processed
+        if (ws.bufferedAmount === 0) {
             ws.send(base64Frame);
             lastFrameTime = currentTime;
         }
@@ -181,33 +179,41 @@ function sendFrame() {
     animationFrameId = requestAnimationFrame(sendFrame);
 }
 
-// Improved message handling with smoothing
 function handleWsMessage(event) {
     try {
         const data = JSON.parse(event.data);
-        if (data.results) {
-            // Smooth transition between results
-            lastReceivedResults = data.results;
-            drawResults(data.results);
+        
+        // Update vision state based on received results
+        if (data.vision_results) {
+            lastVisionState = data.vision_results;
+        } else {
+            lastVisionState = null;
+        }
+        
+        if (data.face_results) {
+            const results = {
+                face_results: data.face_results,
+                vision_results: lastVisionState
+            };
+            lastReceivedResults = results;
+            drawResults(results);
         }
     } catch (error) {
         console.error('Error processing WebSocket message:', error);
     }
 }
 
-// Improved drawing function with double buffering
 function drawResults(results) {
-    // Create an off-screen canvas for double buffering
     const offscreenCanvas = document.createElement('canvas');
     offscreenCanvas.width = overlay.width;
     offscreenCanvas.height = overlay.height;
     const offscreenCtx = offscreenCanvas.getContext('2d', { alpha: true });
     
-    // Clear the off-screen canvas
     offscreenCtx.clearRect(0, 0, overlay.width, overlay.height);
     
-    if (!results || results.length === 0) {
-        // Copy the off-screen canvas to the visible canvas
+    const { face_results = [], vision_results = {} } = results;
+    
+    if (!face_results.length) {
         const ctx = overlay.getContext('2d');
         ctx.clearRect(0, 0, overlay.width, overlay.height);
         return;
@@ -216,10 +222,8 @@ function drawResults(results) {
     const scaleX = overlay.width / video.videoWidth;
     const scaleY = overlay.height / video.videoHeight;
 
-    results.forEach(result => {
-        if (!result.location || result.location.length !== 4) {
-            return;
-        }
+    face_results.forEach((result, index) => {
+        if (!result.location || result.location.length !== 4) return;
 
         const [top, right, bottom, left] = result.location;
         const color = result.status === 'AUTHORIZED' ? '#22c55e' : '#ef4444';
@@ -229,58 +233,91 @@ function drawResults(results) {
         const scaledWidth = (right - left) * scaleX;
         const scaledHeight = (bottom - top) * scaleY;
 
-        // Draw to off-screen canvas
+        // Draw face box
         offscreenCtx.strokeStyle = color;
         offscreenCtx.lineWidth = 2;
         offscreenCtx.strokeRect(scaledLeft, scaledTop, scaledWidth, scaledHeight);
 
-        // Draw labels with improved visibility
+        // Draw name and confidence label
         offscreenCtx.font = 'bold 16px Arial';
-        
-        // Name label with improved background
-        const nameText = result.name;
-        const nameWidth = offscreenCtx.measureText(nameText).width;
-        const nameHeight = 24;
+        const nameText = `${result.name} (${result.confidence?.toFixed(1) || 0}%)`;
+        const nameMetrics = offscreenCtx.measureText(nameText);
         const namePadding = 8;
-        
+
+        // Background for name
         offscreenCtx.fillStyle = 'rgba(0, 0, 0, 0.8)';
         offscreenCtx.fillRect(
             scaledLeft,
-            Math.max(0, scaledTop - nameHeight - namePadding),
-            nameWidth + (namePadding * 2),
-            nameHeight
+            Math.max(0, scaledTop - 24 - namePadding),
+            nameMetrics.width + (namePadding * 2),
+            24
         );
-        
-        offscreenCtx.fillStyle = color;
+
+        // Draw name text
+        offscreenCtx.fillStyle = 'white';
         offscreenCtx.fillText(
             nameText,
             scaledLeft + namePadding,
-            Math.max(nameHeight - 4, scaledTop - namePadding)
+            Math.max(16, scaledTop - namePadding)
         );
 
-        // Status label with improved visibility
-        const statusText = result.status;
-        const statusWidth = offscreenCtx.measureText(statusText).width;
-        const statusHeight = 24;
-        const statusPadding = 8;
-        
+        // Generate vision analysis text based on available results
+        let visionText = '';
+        if (vision_results) {
+            if (vision_results.emotion) {
+                visionText = `Emotion: ${vision_results.emotion.emotion} (${(vision_results.emotion.confidence * 100).toFixed(1)}%)`;
+            } else if (vision_results.mask) {
+                const maskStatus = vision_results.mask.wearing_mask ? 'Wearing Mask' : 'No Mask';
+                visionText = `Mask: ${maskStatus} (${(vision_results.mask.confidence * 100).toFixed(1)}%)`;
+            } else if (vision_results.people) {
+                visionText = `People Count: ${vision_results.people.count}`;
+            }
+        }
+
+        if (visionText) {
+            const statusMetrics = offscreenCtx.measureText(visionText);
+            const statusHeight = 24;
+            const statusPadding = 8;
+
+            // Background for vision analysis
+            offscreenCtx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            offscreenCtx.fillRect(
+                scaledLeft,
+                scaledTop + scaledHeight + namePadding,
+                statusMetrics.width + (statusPadding * 2),
+                statusHeight
+            );
+
+            // Draw vision analysis text
+            offscreenCtx.fillStyle = 'white';
+            offscreenCtx.fillText(
+                visionText,
+                scaledLeft + statusPadding,
+                scaledTop + scaledHeight + statusHeight
+            );
+        }
+
+        // Draw authorization status
+        const authStatusText = result.status;
+        const authStatusMetrics = offscreenCtx.measureText(authStatusText);
+        const authStatusPadding = 8;
+
         offscreenCtx.fillStyle = 'rgba(0, 0, 0, 0.8)';
         offscreenCtx.fillRect(
             scaledLeft,
-            scaledTop + scaledHeight + namePadding,
-            statusWidth + (statusPadding * 2),
-            statusHeight
+            scaledTop + scaledHeight + (visionText ? 32 : 0) + namePadding,
+            authStatusMetrics.width + (authStatusPadding * 2),
+            24
         );
-        
+
         offscreenCtx.fillStyle = color;
         offscreenCtx.fillText(
-            statusText,
-            scaledLeft + statusPadding,
-            scaledTop + scaledHeight + statusHeight
+            authStatusText,
+            scaledLeft + authStatusPadding,
+            scaledTop + scaledHeight + (visionText ? 32 : 0) + 20
         );
     });
 
-    // Copy the off-screen canvas to the visible canvas with transparency
     const ctx = overlay.getContext('2d', { alpha: true });
     ctx.clearRect(0, 0, overlay.width, overlay.height);
     ctx.drawImage(offscreenCanvas, 0, 0);
@@ -307,7 +344,7 @@ function displayUsers(users) {
     ).join('');
 }
 
-// Image Capture with improved quality
+// Image Capture
 captureBtn.onclick = () => {
     if (!isStreaming) return;
     
@@ -316,7 +353,6 @@ captureBtn.onclick = () => {
     canvas.height = video.videoHeight;
     const ctx = canvas.getContext('2d', { alpha: false });
     
-    // Ensure smooth image capture
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(video, 0, 0);
@@ -342,7 +378,7 @@ function updateCapturedImages() {
     ).join('');
 }
 
-// Dialog Controls with improved validation
+// Dialog Controls
 addUserBtn.onclick = () => {
     if (!isStreaming) {
         alert('Please start the camera first');
@@ -366,7 +402,69 @@ function resetForm() {
     captureBtn.disabled = !isStreaming;
 }
 
-// Save User with improved error handling
+async function uploadUserImages(username, imageFiles) {
+
+    // Ocultar formulario y Mostrar loading...
+    const dialog = document.getElementById('addUserDialog');
+    const loadingOverlay = document.createElement('div');
+    loadingOverlay.id = 'loadingOverlay';
+    loadingOverlay.innerHTML = `
+        <div class="loading-spinner"></div>
+        <p class="text-gray-700">Uploading user and images...</p>
+    `;
+    dialog.appendChild(loadingOverlay);
+
+    const formData = new FormData();
+    
+    imageFiles.forEach((file, index) => {
+        formData.append('images', file, `image_${index + 1}.jpg`);
+    });
+
+    try {
+        const response = await fetch(`http://127.0.0.1:8000/users?username=${encodeURIComponent(username)}`, {
+            method: 'POST',
+            headers: {
+                'accept': 'application/json',
+            },
+            body: formData
+        });
+
+        if (!response.ok) {
+            const errorDetail = await response.json();
+            console.error('Error en la solicitud:', errorDetail);
+            alert(`Error: ${errorDetail.detail || 'Ocurrió un problema al subir las imágenes.'}`);
+            return;
+        }
+
+        const data = await response.json();
+        console.log('Respuesta del servidor:', data);
+
+        // Mostrar un mensaje de que el usuario ha sido añadido correctamente con botón para Cerrar popup
+        dialog.innerHTML = `
+            <div class="success-message text-center">
+                <h2 class="text-green-600 font-bold text-xl">¡Usuario añadido exitosamente!</h2>
+                <p class="text-gray-700 mt-2">El usuario <strong>${username}</strong> ha sido registrado.</p>
+                <button id="closeSuccessBtn" class="btn btn-primary mt-4">Cerrar</button>
+            </div>
+        `;
+
+        document.getElementById('closeSuccessBtn').onclick = () => {
+            dialog.style.display = 'none';
+            dialog.innerHTML = ''; // Limpia el contenido del diálogo
+        };
+
+    } catch (error) {
+        console.error('Error en la solicitud:', error);
+        alert('Ocurrió un error al intentar subir las imágenes.');
+    } finally {
+        // TODO: Remover el overlay de loading una vez que finalice la operación
+        if (document.getElementById('loadingOverlay')) {
+            document.getElementById('loadingOverlay').remove();
+        }
+    }
+}
+
+// Save User
 saveUserBtn.onclick = async () => {
     if (capturedImages.length === 0 || !usernameInput.value) {
         alert('Please capture at least one image and enter a username');
@@ -379,29 +477,26 @@ saveUserBtn.onclick = async () => {
         formData.append('images', image, `image_${index}.jpg`);
     });
 
+    // Verificar el contenido de FormData
+    for (let [key, value] of formData.entries()) {
+        console.log(`${key}:`, value);
+    }
+
+
     try {
-        const response = await fetch('http://localhost:8000/users', {
-            method: 'POST',
-            body: formData,
-        });
 
-        const data = await response.json();
-
-        if (response.ok) {
-            alert('User added successfully!');
-            addUserDialog.style.display = 'none';
-            resetForm();
-            await fetchUsers();
-        } else {
-            alert(`Error adding user: ${data.detail || 'Unknown error'}`);
-        }
+        const username = usernameInput.value.trim(); // Obtener el nombre de usuario
+        const files = Array.from(capturedImages); // Convertir imágenes capturadas en un array
+        await uploadUserImages(username, files);
+       
+        
     } catch (error) {
         console.error('Error adding user:', error);
         alert('Error adding user. Please check your connection and try again.');
     }
 };
 
-// Form validation with improved feedback
+// Form validation
 usernameInput.oninput = () => {
     const username = usernameInput.value.trim();
     saveUserBtn.disabled = capturedImages.length === 0 || !username;
@@ -413,10 +508,38 @@ usernameInput.oninput = () => {
     }
 };
 
-// Cleanup on page unload
+// Analysis Type Controls
+const analysisSelect = document.getElementById('analysisType');
+
+analysisSelect.onchange = async () => {
+    const selectedOption = analysisSelect.value;
+    
+    try {
+        const response = await fetch('http://localhost:8000/set-analysis', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ type: selectedOption })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('Analysis type updated:', data);
+    } catch (error) {
+        console.error('Error updating analysis type:', error);
+        alert('Error updating analysis type. Please try again.');
+    }
+};
+
+// Cleanup
 window.addEventListener('beforeunload', () => {
     stopStream();
 });
 
 // Initial setup
 document.addEventListener('DOMContentLoaded', fetchUsers);
+

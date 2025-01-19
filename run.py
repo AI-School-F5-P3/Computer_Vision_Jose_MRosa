@@ -34,9 +34,9 @@ def start_server():
     """
     Inicia el servidor Uvicorn.
     """
-    print(f"\n🖥️ {BLUE}Iniciando servidor con Uvicorn...{RESET}\n")
+    print(f"\n🖥️ {BLUE} Iniciando servidor con Uvicorn...{RESET}\n")
     return subprocess.Popen(
-        [sys.executable, "-m", "uvicorn", "frontend.app:app", "--reload"],
+        [sys.executable, "-m", "uvicorn", "src.main:app", "--reload"],
         cwd="."
     )
 
@@ -65,6 +65,6 @@ def main():
     frontend_process.wait()
 
 if __name__ == "__main__":
-    # Asegurarse de que el código solo se ejecute en el proceso principal
+    # Nos aseguramos de que el código solo se ejecute en el proceso principal
     if "uvicorn" not in sys.argv:
         main()

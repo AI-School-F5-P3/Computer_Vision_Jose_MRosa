@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Face Recognition System</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
-    <link href="home.css" rel="stylesheet">
+    <link href="../css/styles.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100 min-h-screen p-4">
     <div class="container mx-auto">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <!-- Video Feed Section -->
             <div class="md:col-span-2 bg-white p-4 rounded-lg shadow">
-                <h2 class="text-xl font-bold mb-4">Face Recognition Feed</h2>
+                <h2 class="text-xl font-bold mb-4">Welcome to the F5 Party !</h2>
                 <div class="video-container">
                     <video id="video" autoplay playsinline></video>
                     <canvas id="overlay"></canvas>
@@ -26,17 +26,14 @@
             <div class="bg-white p-4 rounded-lg shadow">
                 <h2 class="text-xl font-bold mb-4">Registered Users</h2>
                 <div id="userList" class="user-list"></div>
-                <button id="addUserBtn" class="btn btn-primary w-full mt-4">
+                <button id="addUserBtn" class="btn btn-primary w-[300px] mt-4">
                     Add New User
                 </button>
             </div>
         </div>
     </div>
 
-    <div class="video-container">
-        <video id="video"></video>
-        <canvas id="overlay"></canvas>
-    </div>
+   
 
     <!-- Add User Dialog -->
     <div id="addUserDialog" class="dialog-overlay">
@@ -62,6 +59,17 @@
         </div>
     </div>
 
-    <script src="home.js"></script>
+    <!-- Analysis Controls Section -->
+    <div class="bg-white p-4 rounded-lg shadow mt-4">
+        <h2 class="text-xl font-bold mb-4">Pipeline Options</h2>
+        <select id="analysisType" class="analysis-select">
+            <option value="none">None</option>
+            <option value="emotion">Emotion</option>
+            <option value="mask">Mask</option>
+            <option value="people">Number of People</option>
+        </select>
+    </div>
+
+    <script src="../js/home.js"></script>
 </body>
 </html>
