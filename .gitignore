@@ -179,3 +179,4 @@ cython_debug/
 
 # Visual Studio Project
 .vs
+frontend/static/scss/combined.scss
