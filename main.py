@@ -271,6 +271,11 @@ class FaceRecognitionSystem:
 
 face_system = FaceRecognitionSystem()
 
+
+@app.get("/")  #RUTA RAIZ AÑADIDA
+async def read_root():
+    return {"message": "Bienvenido al sistema de detección facial de Factoría F5"}
+
 @app.websocket("/ws/video")
 async def video_websocket(websocket: WebSocket):
     if not await manager.connect(websocket):
@@ -340,7 +345,6 @@ async def video_websocket(websocket: WebSocket):
     finally:
         await manager.disconnect(websocket)
 
-
 @app.post("/users")
 async def add_user(username: str, images: List[UploadFile] = File(...)):
     return await face_system.add_user(username, images)
@@ -349,7 +353,6 @@ async def add_user(username: str, images: List[UploadFile] = File(...)):
 async def get_users():
     users = [dir.name for dir in face_system.dataset_path.iterdir() if dir.is_dir()]
     return {"users": users}
-
 
 @app.post("/set-analysis")
 async def set_analysis(request: Request, data: dict):
@@ -370,7 +373,7 @@ async def set_analysis(request: Request, data: dict):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000, workers=1)
+    uvicorn.run(app, host="127.0.0.1", port=8000, workers=1)
 
 
 
