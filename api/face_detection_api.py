@@ -34,6 +34,10 @@ class FaceDetectionAPI:
         self.app.websocket("/ws/video")(self.video_websocket)
         self.app.post("/add_user")(self.add_user)
         self.app.get("/users")(self.get_users)
+        self.app.get("/")(self.read_root)  # Ruta raíz añadida
+    
+    async def read_root(self):
+        return {"message": "Bienvenido al sistema de detección facial de Factoría F5"}
 
     async def video_websocket(self, websocket: WebSocket):
         if not await self.manager.connect(websocket):
