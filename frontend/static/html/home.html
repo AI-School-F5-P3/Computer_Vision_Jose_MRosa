@@ -9,32 +9,37 @@
 </head>
 <body class="bg-gray-100 min-h-screen p-4">
     <div class="container mx-auto">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <!-- Video Feed Section -->
-            <div class="md:col-span-2 bg-white p-4 rounded-lg shadow">
-                <h2 class="text-xl font-bold mb-4">Welcome to the F5 Party !</h2>
-                <div class="video-container">
-                    <video id="video" autoplay playsinline></video>
-                    <canvas id="overlay"></canvas>
-                </div>
-                <button id="toggleCamera" class="btn btn-primary mt-4">
-                    Start Camera
-                </button>
+        <div class="flex justify-center items-center mb-4 w-1/2 mx-auto">
+            <div class="flex items-center justify-center gap-4 w-1/3">
+                <img class="coctel" src="../img/coctel.png" alt="logo">
             </div>
-
-            <!-- Users Section -->
-            <div class="bg-white p-4 rounded-lg shadow">
-                <h2 class="text-xl font-bold mb-4">Registered Users</h2>
-                <div id="userList" class="user-list"></div>
-                <button id="addUserBtn" class="btn btn-primary w-[300px] mt-4">
-                    Add New User
-                </button>
+            <div class="flex items-center flex-col gap-4 w-2/3">
+                <div class="video-container">
+                    <video id="video" autoplay="" playsinline=""></video>
+                    <canvas id="overlay" width="640" height="480"></canvas>
+                </div>
+                <div class="p-4 rounded-lg shadow mt-4">
+                    <button id="toggleCamera" class="btn btn-primary mt-4">
+                        Start Camera
+                    </button>
+                    <select id="analysisType" class="analysis-select">
+                        <option value="none">None</option>
+                        <option value="emotion">Emotion</option>
+                        <option value="mask">Mask</option>
+                        <option value="people">Number of People</option>
+                    </select>
+                </div>
             </div>
         </div>
+        <div class="p-4 rounded-lg shadow w-1/3">
+            <h2 class="text-xl font-bold mb-4">Registered Users</h2>
+            <div id="userList" class="user-list"><div class="user-item">Angel</div><div class="user-item">Carlos</div><div class="user-item">dddddd</div><div class="user-item">Jose</div><div class="user-item">MRosa</div><div class="user-item">peralta</div></div>
+            <button id="addUserBtn" class="btn btn-primary w-[300px] mt-4">
+                Add New User
+            </button>
+        </div>
     </div>
-
-   
-
+      
     <!-- Add User Dialog -->
     <div id="addUserDialog" class="dialog-overlay">
         <div class="dialog">
@@ -58,18 +63,7 @@
             </div>
         </div>
     </div>
-
-    <!-- Analysis Controls Section -->
-    <div class="bg-white p-4 rounded-lg shadow mt-4">
-        <h2 class="text-xl font-bold mb-4">Pipeline Options</h2>
-        <select id="analysisType" class="analysis-select">
-            <option value="none">None</option>
-            <option value="emotion">Emotion</option>
-            <option value="mask">Mask</option>
-            <option value="people">Number of People</option>
-        </select>
-    </div>
-
     <script src="../js/home.js"></script>
+    <script src="../js/front.js"></script>
 </body>
 </html>
