@@ -16,7 +16,7 @@ let reconnectTimeout = null;
 const video = document.getElementById('video');
 const overlay = document.getElementById('overlay');
 const toggleBtn = document.getElementById('toggleCamera');
-const addUserBtn = document.getElementById('addUserBtn');
+
 const addUserDialog = document.getElementById('addUserDialog');
 const usernameInput = document.getElementById('username');
 const captureBtn = document.getElementById('captureBtn');
@@ -26,7 +26,7 @@ const userList = document.getElementById('userList');
 const capturedImagesContainer = document.getElementById('capturedImages');
 
 // Set initial canvas size
-overlay.width = 640;
+overlay.width = 770;
 overlay.height = 480;
 
 // Improved WebSocket connection with better error handling
@@ -79,7 +79,7 @@ async function startStream() {
     try {
         stream = await navigator.mediaDevices.getUserMedia({
             video: {
-                width: { ideal: 640 },
+                width: { ideal: 770 },
                 height: { ideal: 480 },
                 facingMode: 'user',
                 frameRate: { ideal: 15 }
@@ -97,11 +97,13 @@ async function startStream() {
         const videoTrack = stream.getVideoTracks()[0];
         const settings = videoTrack.getSettings();
         
-        overlay.width = settings.width || 640;
+        overlay.width = settings.width || 770;
         overlay.height = settings.height || 480;
         
         isStreaming = true;
         toggleBtn.textContent = 'Stop Camera';
+        toggleBtn.classList.add('camera-active'); 
+        video.parentNode.classList.add('video-active');
         captureBtn.disabled = false;
         
         setupWebSocket();
@@ -134,6 +136,8 @@ function stopStream() {
     
     isStreaming = false;
     toggleBtn.textContent = 'Start Camera';
+    toggleBtn.classList.remove('camera-active');
+    video.parentNode.classList.remove('video-active'); 
     captureBtn.disabled = true;
     lastVisionState = null;
     
@@ -239,18 +243,18 @@ function drawResults(results) {
         offscreenCtx.strokeRect(scaledLeft, scaledTop, scaledWidth, scaledHeight);
 
         // Draw name and confidence label
-        offscreenCtx.font = 'bold 16px Arial';
+        offscreenCtx.font = 'bold 14px Arial';
         const nameText = `${result.name} (${result.confidence?.toFixed(1) || 0}%)`;
         const nameMetrics = offscreenCtx.measureText(nameText);
-        const namePadding = 8;
+        const namePadding = 10;
 
         // Background for name
         offscreenCtx.fillStyle = 'rgba(0, 0, 0, 0.8)';
         offscreenCtx.fillRect(
             scaledLeft,
-            Math.max(0, scaledTop - 24 - namePadding),
+            Math.max(0, scaledTop - 20 - namePadding),
             nameMetrics.width + (namePadding * 2),
-            24
+            30
         );
 
         // Draw name text
@@ -276,8 +280,8 @@ function drawResults(results) {
 
         if (visionText) {
             const statusMetrics = offscreenCtx.measureText(visionText);
-            const statusHeight = 24;
-            const statusPadding = 8;
+            const statusHeight = 30;
+            const statusPadding = 10;
 
             // Background for vision analysis
             offscreenCtx.fillStyle = 'rgba(0, 0, 0, 0.8)';
@@ -300,21 +304,21 @@ function drawResults(results) {
         // Draw authorization status
         const authStatusText = result.status;
         const authStatusMetrics = offscreenCtx.measureText(authStatusText);
-        const authStatusPadding = 8;
+        const authStatusPadding = 10;
 
         offscreenCtx.fillStyle = 'rgba(0, 0, 0, 0.8)';
         offscreenCtx.fillRect(
             scaledLeft,
             scaledTop + scaledHeight + (visionText ? 32 : 0) + namePadding,
-            authStatusMetrics.width + (authStatusPadding * 2),
-            24
+            authStatusMetrics.width + (authStatusPadding * 2) ,
+            30
         );
 
         offscreenCtx.fillStyle = color;
         offscreenCtx.fillText(
             authStatusText,
             scaledLeft + authStatusPadding,
-            scaledTop + scaledHeight + (visionText ? 32 : 0) + 20
+            scaledTop + scaledHeight + (visionText ? 32 : 0) + 30
         );
     });
 
@@ -340,7 +344,12 @@ async function fetchUsers() {
 
 function displayUsers(users) {
     userList.innerHTML = users.map(user => 
-        `<div class="user-item">${user}</div>`
+        `<div class="user-item">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+        </svg>
+        ${user}
+        </div>`
     ).join('');
 }
 
@@ -373,34 +382,42 @@ captureBtn.onclick = () => {
 };
 
 function updateCapturedImages() {
-    capturedImagesContainer.innerHTML = capturedImages.map((_, index) => 
-        `<div class="captured-image">Image ${index + 1}</div>`
-    ).join('');
+    capturedImagesContainer.innerHTML = ''; // Limpia el contenedor
+
+    capturedImages.forEach((blob, index) => {
+        // Crea un div para contener cada imagen
+        const imageDiv = document.createElement('div');
+        imageDiv.className = 'captured-image';
+
+        // Crea un elemento <img> para mostrar la imagen capturada
+        const imgElement = document.createElement('img');
+        imgElement.alt = `Image ${index + 1}`;
+        // imgElement.style.width = '100px'; // Ajusta el tamaño según tus necesidades
+        // imgElement.style.height = 'auto';
+
+        // Convierte el blob en una URL de objeto para mostrar la imagen
+        const blobURL = URL.createObjectURL(blob);
+        imgElement.src = blobURL;
+
+        // Añade la imagen al div
+        imageDiv.appendChild(imgElement);
+
+        // Añade el div al contenedor
+        capturedImagesContainer.appendChild(imageDiv);
+    });
 }
 
-// Dialog Controls
-addUserBtn.onclick = () => {
-    if (!isStreaming) {
-        alert('Please start the camera first');
-        return;
-    }
-    addUserDialog.style.display = 'flex';
-};
 
-cancelBtn.onclick = () => {
-    if (confirm('Are you sure you want to cancel? All captured images will be discarded.')) {
-        addUserDialog.style.display = 'none';
-        resetForm();
-    }
-};
 
-function resetForm() {
-    usernameInput.value = '';
-    capturedImages.length = 0;
-    updateCapturedImages();
-    saveUserBtn.disabled = true;
-    captureBtn.disabled = !isStreaming;
-}
+
+// cancelBtn.onclick = () => {
+//     if (confirm('Are you sure you want to cancel? All captured images will be discarded.')) {
+//         addUserDialog.style.display = 'none';
+//         resetForm();
+//     }
+// };
+
+
 
 async function uploadUserImages(username, imageFiles) {
 
@@ -408,9 +425,10 @@ async function uploadUserImages(username, imageFiles) {
     const dialog = document.getElementById('addUserDialog');
     const loadingOverlay = document.createElement('div');
     loadingOverlay.id = 'loadingOverlay';
+    loadingOverlay.className = 'loading-overlay fixed inset-0 bg-gray-950 bg-opacity-50 flex items-center justify-center z-50 transition-opacity duration-500 opacity-100';
     loadingOverlay.innerHTML = `
         <div class="loading-spinner"></div>
-        <p class="text-gray-700">Uploading user and images...</p>
+        <p class="text-white-700 my-8">Añadiendo usuario...</p>
     `;
     dialog.appendChild(loadingOverlay);
 
@@ -441,9 +459,9 @@ async function uploadUserImages(username, imageFiles) {
 
         // Mostrar un mensaje de que el usuario ha sido añadido correctamente con botón para Cerrar popup
         dialog.innerHTML = `
-            <div class="success-message text-center">
+            <div class="dialog rounded-lg shadow-lg p-6 w-full max-w-md text-center">
                 <h2 class="text-green-600 font-bold text-xl">¡Usuario añadido exitosamente!</h2>
-                <p class="text-gray-700 mt-2">El usuario <strong>${username}</strong> ha sido registrado.</p>
+                <p class="text-white-700 my-6">El usuario <strong>${username}</strong> ha sido registrado.</p>
                 <button id="closeSuccessBtn" class="btn btn-primary mt-4">Cerrar</button>
             </div>
         `;
@@ -451,6 +469,7 @@ async function uploadUserImages(username, imageFiles) {
         document.getElementById('closeSuccessBtn').onclick = () => {
             dialog.style.display = 'none';
             dialog.innerHTML = ''; // Limpia el contenido del diálogo
+            fetchUsers()
         };
 
     } catch (error) {

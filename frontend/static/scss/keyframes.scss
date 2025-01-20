@@ -1,11 +1,9 @@
 @keyframes appear {
     0% {
-        // background-position: 0% -100%;
         opacity: 0;
     }
     100% {
         opacity: 1;
-        // background-position: 0% 0%;
     }
 }
 
@@ -18,5 +16,29 @@
     }
     100% {
     background-position: 0% 0%;
+    }
+}
+
+@keyframes animateAngle {
+    0% {
+        transform: rotate(0deg);
+        opacity: .8;
+    }
+    50% {
+        opacity: 0;
+        transform: rotate(180deg);
+    }
+    100% {
+        transform: rotate(360deg);
+        opacity: .8;
+    }
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
     }
 }
