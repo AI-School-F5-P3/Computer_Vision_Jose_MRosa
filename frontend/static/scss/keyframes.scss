@@ -42,3 +42,15 @@
         transform: rotate(360deg);
     }
 }
+
+@keyframes animateOpacity {
+    0% {
+        opacity: .5;
+    }
+    50% {
+        opacity: .1;
+    }
+    100% {
+        opacity: .5;
+    }
+}

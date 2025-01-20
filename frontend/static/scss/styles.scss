@@ -4,7 +4,7 @@ body {
     transition: var(--hover-transition);
     font-family: Arial, sans-serif;
     height: 100vh;
-    &:after {
+    &:before {
         display: block;
         width: 200vw;
         height: 200vw;
@@ -17,6 +17,21 @@ body {
         box-shadow: inset 0px 0px 600px rgba(0, 0, 0, 1);
         animation: animateAngle 15s infinite ease-in-out;
         will-change: transform;
+        z-index: 1;
+    }
+    &:after {
+        display: block;
+        width: 200vw;
+        height: 200vw;
+        content: "";
+        background: #000;
+        position: fixed;
+        top: -50vw;
+        left: -50vw;
+        opacity: .5;
+        box-shadow: inset 0px 0px 600px rgba(0, 0, 0, 1);
+        pointer-events: none;
+        animation: animateOpacity 10s infinite ease-in-out;
         z-index: 1;
     }
 }
