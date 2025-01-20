@@ -94,7 +94,7 @@ class SCSSWatcher(FileSystemEventHandler):
 
     def compile_scss(self):
         combined_scss_path = os.path.normpath(os.path.join(self.scss_dir, 'combined.scss')).replace("\\", "/")
-        css_output_path = os.path.normpath(os.path.join(self.css_dir, 'main.css')).replace("\\", "/")
+        css_output_path = os.path.normpath(os.path.join(self.css_dir, 'styles.css')).replace("\\", "/")
 
         if not os.path.isfile(combined_scss_path):
             logging.error(f"❌ El archivo combinado '{combined_scss_path}' no fue encontrado.")

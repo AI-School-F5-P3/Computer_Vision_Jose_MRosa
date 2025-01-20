@@ -61,15 +61,16 @@ class FaceProcessor:
                     face_distances = face_recognition.face_distance(known_face_encodings, face_encoding)
                     best_match_index = np.argmin(face_distances)
                     
+                    # Calculate confidence percentage (face_distance of 0 = 100% match, 1 = 0% match)
+                    confidence = (1 - face_distances[best_match_index]) * 100
+
                     if face_distances[best_match_index] < 0.6:
                         name = known_face_names[best_match_index]
                         access_status = "AUTHORIZED"
                     else:
                         name = "Unknown"
                         access_status = "DENIED"
-                else:
-                    name = "Unknown"
-                    access_status = "DENIED"
+                        confidence = 0  # Set to 0 for unknown faces
 
                 if scale != 1.0:
                     top = int(top / scale)
@@ -80,7 +81,8 @@ class FaceProcessor:
                 results.append({
                     "location": (top, right, bottom, left),
                     "name": name,
-                    "status": access_status
+                    "status": access_status,
+                    "confidence": round(confidence, 1)  # Round to 1 decimal place
                 })
 
             self.last_results = results
@@ -89,4 +91,3 @@ class FaceProcessor:
 
         finally:
             self.processing = False
-

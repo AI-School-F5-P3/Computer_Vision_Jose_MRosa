@@ -103,3 +103,4 @@ class FaceDetectionAPI:
 # from src.face_detection_api import FaceDetectionAPI
 # api_instance = FaceDetectionAPI()
 # app = api_instance.app
+

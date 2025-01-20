@@ -1,10 +1,10 @@
 // Estilo general
 body {
-    background: red;
+    background: var(--gradient-bg);
     color: var(--white-color);
     transition: var(--hover-transition);
     font-family: Arial, sans-serif;
-    position: relative;
+    height: 100vh;
 }
 
 h1 {
@@ -20,60 +20,61 @@ em {
     opacity: .9;
 }
 
-.stVerticalBlock {
-    &.st-key-header {
-        position: fixed;
-        top: 0;
-        z-index: 3;
-        height: 50vh;
-        max-height: 100%;
-        width: 75rem;
-        background-size: cover;
-        background-position: center bottom;
-        background-repeat: no-repeat;
-    }
-    
-    &.st-key-ofended {
-        p {
-            font-size: 0.8em;
-            color: #f58c8c;
-            padding-left: 2.3rem;
-        }
-    }
-}
-
-// [data-testid="stChatMessage"] {
-//     &:nth-of-type(even) {
-//         flex-direction: row-reverse;
-//         text-align: right;
-//         background: #28036e42;
-//         padding: 1rem;
-//         margin: 0 3rem;
-//     }
-//     > img {
-//         width: 3rem;
-//         height: 3rem;
-//         flex-shrink: 0;
-//         border-radius: 100%;
-//         object-fit: cover;
-//         display: flex;
-//     }
-// }
-
-#app{
-    width: 75rem;
-    left: 0;
-    right: 0;
+.loading-spinner {
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
     margin: 0 auto;
-    z-index: 2;
-    background-color: var(--transparent-bg);
-    box-shadow: 0 0 200px #d788432e;
-    height: 100vh;
-    padding: 50vh 0 0 0;
-    // animation: appear 15s ease;
-    // animation-iteration-count: 1;
 }
 
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+#loadingOverlay {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.8);
+    z-index: 999;
+}
+
+
+main{
+    > .detect_users{
+        width: 50rem;
+        left: 0;
+        right: 0;
+        margin: 10vh auto;
+        z-index: 2;
+        background-color: var(--transparent-bg);
+        box-shadow: 0 0 200px #d788432e;
+        height: 80vh;
+        position: absolute;
+        overflow: hidden;
+        border-radius: 20px;
+        // animation: appear 15s ease;
+        // animation-iteration-count: 1;
+    }
+} 
+
+.aspect-video{
+    aspect-ratio: 16 / 9;
+}
 // .stBottom {
 //     > div {
 //         background: transparent;
