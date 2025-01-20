@@ -1,0 +1,7 @@
+models:
+  emotion:
+    enabled: false
+  pose:
+    enabled: true
+  mask:
+    enabled: false

@@ -36,6 +36,12 @@ MANIFEST
 pip-log.txt
 pip-delete-this-directory.txt
 
+# logs
+logs/
+
+#dataset
+dataset/
+
 # Unit test / coverage reports
 htmlcov/
 .tox/
@@ -170,3 +176,7 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Visual Studio Project
+.vs
+frontend/static/scss/combined.scss

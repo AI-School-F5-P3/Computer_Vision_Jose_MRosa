@@ -1,0 +1,17 @@
+requests
+watchdog
+libsass
+uvicorn
+uvicorn[standard]
+websockets
+fastapi
+opencv-python
+opencv-contrib-python
+numpy
+face_recognition
+asyncio
+python-multipart
+transformers
+torch 
+torchvision 
+torchaudio
